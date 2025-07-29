@@ -1,1 +1,1 @@
-# RandomForest_RSI_Returns_Strategy.py
+Developed a machine learning-based trading strategy using Random Forest to predict next-day stock price movement. Engineered key features like daily returns and RSI indicator from historical price data, achieving reliable classification performance on unseen test data.
