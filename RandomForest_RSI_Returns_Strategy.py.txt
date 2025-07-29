@@ -1,0 +1,47 @@
+import yfinance as yf
+import pandas as pd
+import numpy as np
+from ta.momentum import RSIIndicator
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+
+# Download historical data for Apple
+df = yf.download("AAPL", start="2018-01-01", end="2024-12-31")
+
+# Use Adjusted Close as price
+df = df[['Close']].rename(columns={'Close': 'price'})
+
+# Calculate daily returns
+df['returns'] = df['price'].pct_change()
+
+# Calculate RSI
+price_series = df['price']
+if isinstance(price_series, pd.DataFrame):
+    price_series = price_series.iloc[:, 0]
+
+df['rsi'] = RSIIndicator(close=price_series, window=14).rsi()
+
+# Create target: 1 if next day's price increases, else 0
+df['target'] = (df['price'].shift(-1) > df['price']).astype(int)
+
+# Drop rows with missing values caused by pct_change and RSI calculations
+df.dropna(inplace=True)
+
+# Define features and target
+features = df[['returns', 'rsi']]
+target = df['target']
+
+# Split data into training and test sets without shuffling to mimic chronological trading data
+X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, shuffle=False)
+
+# Initialize and train Random Forest Classifier
+model = RandomForestClassifier(random_state=42)
+model.fit(X_train, y_train)
+
+# Make predictions on test data
+y_pred = model.predict(X_test)
+
+# Output evaluation metrics
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+print("\nClassification Report:\n", classification_report(y_test, y_pred))
